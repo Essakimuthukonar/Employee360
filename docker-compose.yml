@@ -1,0 +1,83 @@
+
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: employee360-database
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: employee360
+      POSTGRES_USER: employee360
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Employee360LocalDBChangeMe}
+    volumes:
+      - employee360_db_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U employee360 -d employee360"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - employee360-network
+
+  backend:
+    image: employee360-backend:v2
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: employee360-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://employee360:${DB_PASSWORD:-Employee360LocalDBChangeMe}@database:5432/employee360
+      SECRET_KEY: ${SECRET_KEY:-local-only-change-this-secret}
+      JWT_HOURS: 8
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health', timeout=5)"
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - employee360-network
+
+  seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: employee360-seed
+    environment:
+      DATABASE_URL: postgresql://employee360:${DB_PASSWORD:-Employee360LocalDBChangeMe}@database:5432/employee360
+    command: ["python", "seed_users.py"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - employee360-network
+
+  frontend:
+    image: employee360-frontend:v1
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: employee360-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - employee360-network
+
+volumes:
+  employee360_db_data:
+
+networks:
+  employee360-network:
+    driver: bridge

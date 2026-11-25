@@ -1,0 +1,44 @@
+node_modules/
+dist/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Python generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.backup
+
+# Node generated files
+node_modules/
+dist/
+
+# Terraform generated files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Local and editor files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Existing starter DevOps files - we will create our own
+/.github/
+/deploy/
+/monitoring/
+/Jenkinsfile
+
+# Temporary SQL backup
+/backend/app/main.py.backup
