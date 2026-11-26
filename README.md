@@ -2,7 +2,7 @@
 
 A three-tier HR management application built with React/Vite, Flask REST API and PostgreSQL.
 It includes employee management, departments, attendance, leave workflows, payroll records,
-performance reviews, recruitment, onboarding, notifications, authentication and role-based access..
+performance reviews, recruitment, onboarding, notifications, authentication and role-based access...
 
 ## 1. Run locally
 
