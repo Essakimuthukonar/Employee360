@@ -1,6 +1,6 @@
 # Employee360 — HRMS DevOps Project
 
-Three-tier HRMS deployed on AWS EC2 using Docker, Jenkins, Docker Hub, Kubernetes Kind, Helm, Prometheus and Grafana.
+Three-tier HRMS deployed on AWS EC2 using Docker, Jenkins, Docker Hub, Kubernetes Kind, Helm, Prometheus and Grafana..
 
 ## Technology Stack
 - Frontend: React, Vite, Nginx
