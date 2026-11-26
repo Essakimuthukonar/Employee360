@@ -1,0 +1,145 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: employee360-postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.database.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employee360-database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: employee360-database
+  template:
+    metadata:
+      labels:
+        app: employee360-database
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.database.image }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.database.name | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.database.user | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.database.password | quote }}
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U {{ .Values.database.user }} -d {{ .Values.database.name }}"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: employee360-postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database
+spec:
+  selector:
+    app: employee360-database
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employee360-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: employee360-backend
+  template:
+    metadata:
+      labels:
+        app: employee360-backend
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
+      containers:
+        - name: backend
+          image: {{ .Values.backend.image }}
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://{{ .Values.database.user }}:{{ .Values.database.password }}@database:5432/{{ .Values.database.name }}"
+            - name: SECRET_KEY
+              value: "employee360-demo-secret-change-later"
+            - name: JWT_HOURS
+              value: "8"
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: employee360-backend
+  ports:
+    - port: 5000
+      targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employee360-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: employee360-frontend
+  template:
+    metadata:
+      labels:
+        app: employee360-frontend
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
+      containers:
+        - name: frontend
+          image: {{ .Values.frontend.image }}
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: employee360-frontend
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP

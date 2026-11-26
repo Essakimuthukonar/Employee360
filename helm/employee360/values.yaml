@@ -1,0 +1,15 @@
+frontend:
+  image: muthukonar/employee360-frontend:v1
+  port: 8080
+  nodePort: 30080
+
+backend:
+  image: muthukonar/employee360-backend:v1
+  port: 5000
+
+database:
+  image: postgres:16-alpine
+  name: employee360
+  user: employee360
+  password: Employee360LocalDBChangeMe
+  storage: 1Gi
